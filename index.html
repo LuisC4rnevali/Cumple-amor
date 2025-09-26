@@ -107,10 +107,11 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            transition: transform 0.5s ease-in-out, opacity 0.5s;
             z-index: 0;
             transform: translateY(80px);
             opacity: 0;
+            /* MODIFICACIÓN: Se añade un retraso para sincronizar con la solapa */
+            transition: transform 0.5s 0.4s ease-in-out, opacity 0.5s 0.4s;
         }
 
         .envelope-wrapper.open .letter {
@@ -142,14 +143,8 @@
             width: 60px;
             position: absolute;
         }
-        .heart:before {
-            top: -30px;
-            left: 0;
-        }
-        .heart:after {
-            left: -30px;
-            top: 0;
-        }
+        .heart:before { top: -30px; left: 0; }
+        .heart:after { left: -30px; top: 0; }
 
         .card-container {
             display: none;
@@ -168,9 +163,7 @@
             align-items: center;
         }
         
-        .card-container.visible {
-            opacity: 1;
-        }
+        .card-container.visible { opacity: 1; }
 
         .card-content {
             max-width: 700px;
@@ -195,9 +188,7 @@
             transition: transform 0.3s ease;
             cursor: pointer;
         }
-        .photo:hover {
-            transform: scale(1.05);
-        }
+        .photo:hover { transform: scale(1.05); }
 
         #text-message {
             color: var(--primary-color);
@@ -206,15 +197,14 @@
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             margin-top: 20px;
+            cursor: pointer; /* NUEVO: Indica que se puede hacer clic en el texto */
         }
         
         #text-message p {
             font-size: 1.2rem;
             line-height: 1.8;
             margin: 0 0 25px 0;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeIn 1s forwards;
+            min-height: 1.8rem; /* Evita saltos de diseño mientras se escribe el texto */
         }
 
         #text-message p em {
@@ -223,75 +213,57 @@
         }
 
         .lightbox {
-            display: none; 
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            justify-content: center;
-            align-items: center;
-            flex-direction: column; 
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center; align-items: center; flex-direction: column; 
         }
-
         .lightbox-content {
-            max-width: 90vw;
-            max-height: 80vh; 
-            display: none; 
-            object-fit: contain; 
+            max-width: 90vw; max-height: 80vh; display: none; object-fit: contain; 
         }
-
         .lightbox-caption {
-            color: #fff;
-            font-family: var(--font-cursive);
-            font-size: 1.5rem;
-            margin-top: 15px;
-            text-align: center;
-            max-width: 90vw;
-            padding: 0 10px;
+            color: #fff; font-family: var(--font-cursive); font-size: 1.5rem;
+            margin-top: 15px; text-align: center; max-width: 90vw; padding: 0 10px;
         }
-
         .close-lightbox {
-            position: absolute;
-            top: 15px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
-            transition: 0.3s;
-            cursor: pointer;
+            position: absolute; top: 15px; right: 35px; color: #f1f1f1;
+            font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer;
         }
-        .close-lightbox:hover {
-            color: #bbb;
-        }
+        .close-lightbox:hover { color: #bbb; }
 
         .heart-trail {
-            position: absolute;
-            pointer-events: none; 
-            z-index: 9999;
-            font-size: 2.5rem; 
-            animation: fadeOutHeart 0.8s forwards;
+            position: absolute; pointer-events: none; z-index: 9999;
+            font-size: 2.5rem; animation: fadeOutHeart 0.8s forwards;
             transform: translate(-50%, -50%); 
         }
-
         @keyframes fadeOutHeart {
-            from {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            to {
-                opacity: 0;
-                transform: translate(-50%, -150%) scale(0.5); 
-            }
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 0; transform: translate(-50%, -150%) scale(0.5); }
         }
         
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* --- NUEVOS ESTILOS: Animación de escritura y pista para continuar --- */
+        .typing-effect::after {
+            content: '█';
+            display: inline-block;
+            animation: blink 0.7s infinite;
+            margin-left: 4px;
+            color: var(--primary-color);
+        }
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        #tap-cue {
+            text-align: center;
+            color: #999;
+            font-family: var(--font-serif);
+            font-style: italic;
+            margin-top: 20px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
@@ -366,6 +338,7 @@
 
             let messageIndex = 0;
             let isEnvelopeOpen = false;
+            let isTyping = false; // NUEVO: Variable para controlar la animación de escritura
 
             function openEnvelope() {
                 if (isEnvelopeOpen) return;
@@ -376,17 +349,68 @@
                     envelope.style.display = 'none';
                     cardContainer.style.display = 'flex';
                     cardContainer.classList.add('visible');
-                    revealNextMessage();
+                    revealNextMessage(); // Inicia el primer mensaje
                 }, 1000);
             }
 
-            function revealNextMessage() {
+            // --- NUEVO: Funciones para la pista visual ---
+            function showTapCue() {
+                if (document.getElementById('tap-cue')) return;
+                const cue = document.createElement('div');
+                cue.id = 'tap-cue';
+                cue.textContent = 'Toca para continuar...';
+                textMessage.appendChild(cue);
+            }
+            function removeTapCue() {
+                const cue = document.getElementById('tap-cue');
+                if (cue) cue.remove();
+            }
+
+            // --- NUEVO: Función para la animación de escritura ---
+            function typeMessage(element, text, speed = 40) {
+                return new Promise(resolve => {
+                    let i = 0;
+                    let inTag = false;
+                    element.innerHTML = '';
+                    const intervalId = setInterval(() => {
+                        if (i < text.length) {
+                            let char = text[i];
+                            if (char === '*') {
+                                element.innerHTML += inTag ? '</em>' : '<em>';
+                                inTag = !inTag;
+                            } else {
+                                element.innerHTML += char;
+                            }
+                            cardContainer.scrollTop = cardContainer.scrollHeight;
+                            i++;
+                        } else {
+                            if (inTag) element.innerHTML += '</em>'; // Cierra la etiqueta si quedó abierta
+                            clearInterval(intervalId);
+                            resolve();
+                        }
+                    }, speed);
+                });
+            }
+
+            // --- MODIFICADO: Función para revelar el mensaje ---
+            async function revealNextMessage() {
+                if (isTyping || messageIndex >= fullMessage.length) return;
+
+                isTyping = true;
+                removeTapCue();
+
+                const p = document.createElement('p');
+                p.classList.add('typing-effect');
+                textMessage.appendChild(p);
+                
+                await typeMessage(p, fullMessage[messageIndex]);
+                
+                p.classList.remove('typing-effect');
+                messageIndex++;
+                isTyping = false;
+                
                 if (messageIndex < fullMessage.length) {
-                    const p = document.createElement('p');
-                    p.innerHTML = fullMessage[messageIndex].replace(/\*([^*]+)\*/g, '<em>$1</em>');
-                    textMessage.appendChild(p);
-                    cardContainer.scrollTop = cardContainer.scrollHeight;
-                    messageIndex++;
+                    showTapCue();
                 }
             }
 
@@ -404,20 +428,15 @@
             cardContainer.addEventListener('pointerdown', () => { isDragging = true; });
             window.addEventListener('pointermove', (e) => { if (isDragging && isEnvelopeOpen) { createHeart(e.clientX, e.clientY); } });
             window.addEventListener('pointerup', () => { isDragging = false; });
+            
             envelope.addEventListener('click', openEnvelope);
             
-            cardContainer.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('photo') && isEnvelopeOpen) {
-                    createHeart(e.clientX, e.clientY);
-                    revealNextMessage();
-                }
-            });
+            // MODIFICADO: El evento ahora es solo en el área de texto
+            textMessage.addEventListener('click', revealNextMessage);
 
-            // --- Lógica del Lightbox (MODIFICADA) ---
             mediaItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // YA NO SE PAUSA LA MÚSICA
                     lightbox.style.display = 'flex';
                     const captionText = item.getAttribute('data-caption');
                     lightboxCaption.textContent = captionText;
@@ -426,12 +445,10 @@
                         lightboxImg.src = item.src;
                         lightboxImg.style.display = 'block';
                         lightboxVideo.style.display = 'none';
-                        lightboxVideo.pause();
-                        lightboxVideo.currentTime = 0;
                     } else if (item.tagName === 'VIDEO') {
                         lightboxVideo.src = item.src;
                         lightboxVideo.style.display = 'block';
-                        lightboxVideo.muted = true; // El video se reproduce silenciado
+                        lightboxVideo.muted = true;
                         lightboxVideo.play().catch(err => console.error("Error:", err));
                         lightboxImg.style.display = 'none';
                     }
@@ -442,8 +459,9 @@
                 lightbox.style.display = 'none';
                 lightboxVideo.pause();
                 lightboxVideo.currentTime = 0;
-                // YA NO SE REANUDA LA MÚSICA (porque nunca se detuvo)
             }
+
+
 
             closeLightboxBtn.addEventListener('click', closeMedia);
             lightbox.addEventListener('click', (e) => {
