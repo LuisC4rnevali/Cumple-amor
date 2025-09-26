@@ -30,6 +30,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Evita el destello azul en móviles al tocar */
         }
 
         .container {
@@ -192,6 +193,7 @@
             border: 3px solid var(--primary-color);
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
             transition: transform 0.3s ease;
+            cursor: pointer; /* Indica que es clickeable */
         }
         .photo:hover {
             transform: scale(1.05);
@@ -219,27 +221,59 @@
             color: #f5b0ff;
         }
 
-        .final-screen {
-            display: none;
-            position: absolute;
-            top: 0;
+        /* --- NUEVOS ESTILOS: Lightbox (para expandir fotos/videos) --- */
+        .lightbox {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000;
             left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
-            background-color: #000;
-            color: white;
+            background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
-            text-align: center;
-            font-family: var(--font-cursive);
-            font-size: 3rem;
-            opacity: 0;
-            transition: opacity 1.5s ease;
         }
 
-        .final-screen.visible {
-            display: flex;
-            opacity: 1;
+        .lightbox-content {
+            max-width: 90vw;
+            max-height: 85vh;
+            display: none; /* Ambos ocultos inicialmente */
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .close-lightbox:hover {
+            color: #bbb;
+        }
+
+        /* --- NUEVOS ESTILOS: Rastro de Corazones --- */
+        .heart-trail {
+            position: absolute;
+            pointer-events: none; /* Para que no interfiera con clicks */
+            z-index: 9999;
+            font-size: 2.5rem; /* Tamaño del corazón */
+            animation: fadeOutHeart 0.8s forwards;
+            transform: translate(-50%, -50%); /* Centra el emoji en el cursor */
+        }
+
+        @keyframes fadeOutHeart {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -150%) scale(0.5); /* Se mueve hacia arriba */
+            }
         }
         
         @keyframes fadeIn {
@@ -280,13 +314,15 @@
                 <img src="foto2.jpg" alt="Foto 2" class="photo">
                 <video src="video2.mp4" class="photo" autoplay loop muted playsinline></video>
                 <img src="foto3.jpg" alt="Foto 3" class="photo">
-                </div>
+            </div>
             <div id="text-message"></div>
         </div>
     </div>
 
-    <div class="final-screen" id="final-screen">
-        <p>Eres el amor de mi vida</p>
+    <div id="lightbox" class="lightbox">
+        <span class="close-lightbox" id="close-lightbox">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <video class="lightbox-content" id="lightbox-video" controls playsinline></video>
     </div>
 
     <script>
@@ -294,9 +330,15 @@
             const envelope = document.getElementById('envelope');
             const cardContainer = document.getElementById('card-container');
             const textMessage = document.getElementById('text-message');
-            const finalScreen = document.getElementById('final-screen');
             const musica = document.getElementById('musicaFondo');
             
+            // --- NUEVO: Elementos del Lightbox ---
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxVideo = document.getElementById('lightbox-video');
+            const closeLightboxBtn = document.getElementById('close-lightbox');
+            const mediaItems = document.querySelectorAll('.photo');
+
             const fullMessage = [
                 "Feliz cumpleaños mi Chilly, Mika, Gaby, Mi amor 🖤🥺",
                 "Quiero que te queden claras dos cosas: que te amo y que no hay nadie que pueda hacerme sentir como lo haces tu 🫠",
@@ -316,7 +358,7 @@
             function openEnvelope() {
                 if (isEnvelopeOpen) return;
                 isEnvelopeOpen = true;
-                musica.play();
+                musica.play().catch(e => console.log("La reproducción automática fue bloqueada por el navegador."));
                 envelope.classList.add('open');
                 setTimeout(() => {
                     envelope.style.display = 'none';
@@ -329,20 +371,87 @@
             function revealNextMessage() {
                 if (messageIndex < fullMessage.length) {
                     const p = document.createElement('p');
-                    p.innerHTML = fullMessage[messageIndex].replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    // Reemplaza los asteriscos por etiquetas <em> para la cursiva
+                    p.innerHTML = fullMessage[messageIndex].replace(/\*([^*]+)\*/g, '<em>$1</em>');
                     textMessage.appendChild(p);
+                    // Hace scroll hacia el final para que el último mensaje sea visible
                     cardContainer.scrollTop = cardContainer.scrollHeight;
                     messageIndex++;
-                } else {
-                    setTimeout(() => {
-                        cardContainer.classList.remove('visible');
-                        finalScreen.classList.add('visible');
-                    }, 2000);
                 }
+                // --- MODIFICADO: Ya no hay pantalla final ---
             }
 
+            // --- NUEVO: Lógica del rastro de corazones ---
+            let isDragging = false;
+
+            function createHeart(x, y) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '🖤';
+                heart.classList.add('heart-trail');
+                heart.style.left = `${x}px`;
+                heart.style.top = `${y}px`;
+                document.body.appendChild(heart);
+                setTimeout(() => {
+                    heart.remove();
+                }, 800); // Coincide con la duración de la animación
+            }
+            
+            cardContainer.addEventListener('pointerdown', () => {
+                isDragging = true;
+            });
+            
+            window.addEventListener('pointermove', (e) => {
+                // Solo crea el rastro si se está arrastrando y el sobre está abierto
+                if (isDragging && isEnvelopeOpen) {
+                    createHeart(e.clientX, e.clientY);
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                isDragging = false;
+            });
+
+            // --- Lógica de Eventos ---
             envelope.addEventListener('click', openEnvelope);
-            cardContainer.addEventListener('click', revealNextMessage);
+            
+            cardContainer.addEventListener('click', (e) => {
+                // Crea un corazón en el lugar del click y revela el mensaje
+                createHeart(e.clientX, e.clientY);
+                revealNextMessage();
+            });
+
+            // --- NUEVO: Lógica del Lightbox ---
+            mediaItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita que se revele el texto al hacer clic en una foto
+                    lightbox.style.display = 'flex';
+                    if (item.tagName === 'IMG') {
+                        lightboxImg.src = item.src;
+                        lightboxImg.style.display = 'block';
+                        lightboxVideo.style.display = 'none';
+                    } else if (item.tagName === 'VIDEO') {
+                        lightboxVideo.src = item.src;
+                        lightboxVideo.style.display = 'block';
+                        lightboxImg.style.display = 'none';
+                        lightboxVideo.play();
+                    }
+                });
+            });
+
+            function closeMedia() {
+                lightbox.style.display = 'none';
+                lightboxVideo.pause();
+                lightboxVideo.currentTime = 0; // Reinicia el video
+            }
+
+            closeLightboxBtn.addEventListener('click', closeMedia);
+            
+            lightbox.addEventListener('click', (e) => {
+                // Cierra el lightbox si se hace clic en el fondo oscuro
+                if (e.target === lightbox) {
+                    closeMedia();
+                }
+            });
         });
     </script>
 
