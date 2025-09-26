@@ -30,7 +30,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            -webkit-tap-highlight-color: transparent; /* Evita el destello azul en móviles al tocar */
+            -webkit-tap-highlight-color: transparent; 
         }
 
         .container {
@@ -193,7 +193,7 @@
             border: 3px solid var(--primary-color);
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
             transition: transform 0.3s ease;
-            cursor: pointer; /* Indica que es clickeable */
+            cursor: pointer;
         }
         .photo:hover {
             transform: scale(1.05);
@@ -205,6 +205,7 @@
             padding: 20px;
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
+            margin-top: 20px;
         }
         
         #text-message p {
@@ -221,9 +222,8 @@
             color: #f5b0ff;
         }
 
-        /* --- NUEVOS ESTILOS: Lightbox (para expandir fotos/videos) --- */
         .lightbox {
-            display: none; /* Oculto por defecto */
+            display: none; 
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -233,12 +233,24 @@
             background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
+            flex-direction: column; 
         }
 
         .lightbox-content {
             max-width: 90vw;
-            max-height: 85vh;
-            display: none; /* Ambos ocultos inicialmente */
+            max-height: 80vh; 
+            display: none; 
+            object-fit: contain; 
+        }
+
+        .lightbox-caption {
+            color: #fff;
+            font-family: var(--font-cursive);
+            font-size: 1.5rem;
+            margin-top: 15px;
+            text-align: center;
+            max-width: 90vw;
+            padding: 0 10px;
         }
 
         .close-lightbox {
@@ -255,14 +267,13 @@
             color: #bbb;
         }
 
-        /* --- NUEVOS ESTILOS: Rastro de Corazones --- */
         .heart-trail {
             position: absolute;
-            pointer-events: none; /* Para que no interfiera con clicks */
+            pointer-events: none; 
             z-index: 9999;
-            font-size: 2.5rem; /* Tamaño del corazón */
+            font-size: 2.5rem; 
             animation: fadeOutHeart 0.8s forwards;
-            transform: translate(-50%, -50%); /* Centra el emoji en el cursor */
+            transform: translate(-50%, -50%); 
         }
 
         @keyframes fadeOutHeart {
@@ -272,7 +283,7 @@
             }
             to {
                 opacity: 0;
-                transform: translate(-50%, -150%) scale(0.5); /* Se mueve hacia arriba */
+                transform: translate(-50%, -150%) scale(0.5); 
             }
         }
         
@@ -309,11 +320,11 @@
     <div class="card-container" id="card-container">
         <div class="card-content">
             <div class="photos">
-                <img src="foto1.jpg" alt="Foto 1" class="photo">
-                <video src="video1.mp4" class="photo" autoplay loop muted playsinline></video>
-                <img src="foto2.jpg" alt="Foto 2" class="photo">
-                <video src="video2.mp4" class="photo" autoplay loop muted playsinline></video>
-                <img src="foto3.jpg" alt="Foto 3" class="photo">
+                <img src="foto1.jpg" alt="Foto 1" class="photo" data-caption="Me encantó este día">
+                <video src="video1.mp4" class="photo" autoplay loop muted playsinline data-caption="Este día no voy a olvidar como te quedaste viendo los zocates 😂"></video>
+                <img src="foto2.jpg" alt="Foto 2" class="photo" data-caption="No lo olvidaré nunca">
+                <video src="video2.mp4" class="photo" autoplay loop muted playsinline data-caption="Nuestra primera salida, mi día favorito contigo de todos los tiempos, cuando no sabía que eras TAN HERMOSA 😍🥺"></video>
+                <img src="foto3.jpg" alt="Foto 3" class="photo" data-caption="Te amo mucho 🥺">
             </div>
             <div id="text-message"></div>
         </div>
@@ -323,6 +334,7 @@
         <span class="close-lightbox" id="close-lightbox">&times;</span>
         <img class="lightbox-content" id="lightbox-img">
         <video class="lightbox-content" id="lightbox-video" controls playsinline></video>
+        <div class="lightbox-caption" id="lightbox-caption"></div>
     </div>
 
     <script>
@@ -332,10 +344,10 @@
             const textMessage = document.getElementById('text-message');
             const musica = document.getElementById('musicaFondo');
             
-            // --- NUEVO: Elementos del Lightbox ---
             const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
             const lightboxVideo = document.getElementById('lightbox-video');
+            const lightboxCaption = document.getElementById('lightbox-caption');
             const closeLightboxBtn = document.getElementById('close-lightbox');
             const mediaItems = document.querySelectorAll('.photo');
 
@@ -358,7 +370,7 @@
             function openEnvelope() {
                 if (isEnvelopeOpen) return;
                 isEnvelopeOpen = true;
-                musica.play().catch(e => console.log("La reproducción automática fue bloqueada por el navegador."));
+                musica.play().catch(e => console.log("La reproducción automática fue bloqueada."));
                 envelope.classList.add('open');
                 setTimeout(() => {
                     envelope.style.display = 'none';
@@ -371,19 +383,14 @@
             function revealNextMessage() {
                 if (messageIndex < fullMessage.length) {
                     const p = document.createElement('p');
-                    // Reemplaza los asteriscos por etiquetas <em> para la cursiva
                     p.innerHTML = fullMessage[messageIndex].replace(/\*([^*]+)\*/g, '<em>$1</em>');
                     textMessage.appendChild(p);
-                    // Hace scroll hacia el final para que el último mensaje sea visible
                     cardContainer.scrollTop = cardContainer.scrollHeight;
                     messageIndex++;
                 }
-                // --- MODIFICADO: Ya no hay pantalla final ---
             }
 
-            // --- NUEVO: Lógica del rastro de corazones ---
             let isDragging = false;
-
             function createHeart(x, y) {
                 const heart = document.createElement('div');
                 heart.innerHTML = '🖤';
@@ -391,49 +398,42 @@
                 heart.style.left = `${x}px`;
                 heart.style.top = `${y}px`;
                 document.body.appendChild(heart);
-                setTimeout(() => {
-                    heart.remove();
-                }, 800); // Coincide con la duración de la animación
+                setTimeout(() => { heart.remove(); }, 800);
             }
             
-            cardContainer.addEventListener('pointerdown', () => {
-                isDragging = true;
-            });
-            
-            window.addEventListener('pointermove', (e) => {
-                // Solo crea el rastro si se está arrastrando y el sobre está abierto
-                if (isDragging && isEnvelopeOpen) {
-                    createHeart(e.clientX, e.clientY);
-                }
-            });
-
-            window.addEventListener('pointerup', () => {
-                isDragging = false;
-            });
-
-            // --- Lógica de Eventos ---
+            cardContainer.addEventListener('pointerdown', () => { isDragging = true; });
+            window.addEventListener('pointermove', (e) => { if (isDragging && isEnvelopeOpen) { createHeart(e.clientX, e.clientY); } });
+            window.addEventListener('pointerup', () => { isDragging = false; });
             envelope.addEventListener('click', openEnvelope);
             
             cardContainer.addEventListener('click', (e) => {
-                // Crea un corazón en el lugar del click y revela el mensaje
-                createHeart(e.clientX, e.clientY);
-                revealNextMessage();
+                if (!e.target.classList.contains('photo') && isEnvelopeOpen) {
+                    createHeart(e.clientX, e.clientY);
+                    revealNextMessage();
+                }
             });
 
-            // --- NUEVO: Lógica del Lightbox ---
+            // --- Lógica del Lightbox (MODIFICADA) ---
             mediaItems.forEach(item => {
                 item.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Evita que se revele el texto al hacer clic en una foto
+                    e.stopPropagation();
+                    // YA NO SE PAUSA LA MÚSICA
                     lightbox.style.display = 'flex';
+                    const captionText = item.getAttribute('data-caption');
+                    lightboxCaption.textContent = captionText;
+
                     if (item.tagName === 'IMG') {
                         lightboxImg.src = item.src;
                         lightboxImg.style.display = 'block';
                         lightboxVideo.style.display = 'none';
+                        lightboxVideo.pause();
+                        lightboxVideo.currentTime = 0;
                     } else if (item.tagName === 'VIDEO') {
                         lightboxVideo.src = item.src;
                         lightboxVideo.style.display = 'block';
+                        lightboxVideo.muted = true; // El video se reproduce silenciado
+                        lightboxVideo.play().catch(err => console.error("Error:", err));
                         lightboxImg.style.display = 'none';
-                        lightboxVideo.play();
                     }
                 });
             });
@@ -441,14 +441,13 @@
             function closeMedia() {
                 lightbox.style.display = 'none';
                 lightboxVideo.pause();
-                lightboxVideo.currentTime = 0; // Reinicia el video
+                lightboxVideo.currentTime = 0;
+                // YA NO SE REANUDA LA MÚSICA (porque nunca se detuvo)
             }
 
             closeLightboxBtn.addEventListener('click', closeMedia);
-            
             lightbox.addEventListener('click', (e) => {
-                // Cierra el lightbox si se hace clic en el fondo oscuro
-                if (e.target === lightbox) {
+                if (e.target === lightbox || e.target === lightboxCaption) {
                     closeMedia();
                 }
             });
