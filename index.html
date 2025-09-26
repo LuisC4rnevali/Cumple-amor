@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Una Sorpresa para Ti</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Satisfy&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --primary-color: #f0e6ff;
+            --envelope-color: #2c2c2c;
+            --envelope-border: #444;
+            --letter-color: #f5f5f5;
+            --heart-color: #be2edd;
+            --font-cursive: "Satisfy", cursive;
+            --font-serif: "Playfair Display", serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-serif);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            perspective: 1000px;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .envelope {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background-color: var(--envelope-color);
+            border: 1px solid var(--envelope-border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.6s ease-in-out;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .envelope-wrapper:hover .envelope {
+            transform: translateY(-10px);
+        }
+
+        .envelope::before, .envelope::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            background-color: transparent;
+            z-index: 1;
+        }
+
+        .envelope::before {
+            top: 0;
+            left: 0;
+            border-width: 100px 150px;
+            border-color: var(--envelope-color) transparent transparent var(--envelope-color);
+            border-top-color: #333;
+        }
+
+        .envelope::after {
+            top: 0;
+            left: 0;
+            border-width: 100px 150px;
+            border-color: var(--envelope-border) transparent transparent var(--envelope-border);
+            transform-origin: top;
+            transition: transform 0.5s 0.3s ease-in-out;
+        }
+        
+        .envelope-wrapper.open .envelope::after {
+            transform: rotateX(180deg);
+            z-index: -1;
+        }
+
+        .letter {
+            position: absolute;
+            background-color: var(--letter-color);
+            width: 280px;
+            height: 180px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.5s ease-in-out, opacity 0.5s;
+            z-index: 0;
+            transform: translateY(80px);
+            opacity: 0;
+        }
+
+        .envelope-wrapper.open .letter {
+            transform: translateY(-20px);
+            opacity: 1;
+        }
+
+        .letter .text {
+            color: #333;
+            font-size: 1.5rem;
+            font-family: var(--font-cursive);
+        }
+        
+        .heart {
+            position: absolute;
+            background-color: var(--heart-color);
+            height: 60px;
+            width: 60px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -80%) rotate(45deg);
+            z-index: 2;
+        }
+        .heart:before, .heart:after {
+            content: "";
+            background-color: var(--heart-color);
+            border-radius: 50%;
+            height: 60px;
+            width: 60px;
+            position: absolute;
+        }
+        .heart:before {
+            top: -30px;
+            left: 0;
+        }
+        .heart:after {
+            left: -30px;
+            top: 0;
+        }
+
+        .card-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .card-container.visible {
+            opacity: 1;
+        }
+
+        .card-content {
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .photo {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 15px;
+            border: 3px solid var(--primary-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease;
+        }
+        .photo:hover {
+            transform: scale(1.05);
+        }
+
+        #text-message {
+            color: var(--primary-color);
+            text-align: left;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+        
+        #text-message p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin: 0 0 25px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s forwards;
+        }
+
+        #text-message p em {
+            font-style: italic;
+            color: #f5b0ff;
+        }
+
+        .final-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: white;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: var(--font-cursive);
+            font-size: 3rem;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        .final-screen.visible {
+            display: flex;
+            opacity: 1;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="musicaFondo" loop>
+        <source src="musica.mp3" type="audio/mpeg">
+        Tu navegador no soporta el elemento de audio.
+    </audio>
+
+    <div class="container">
+        <div class="envelope-wrapper" id="envelope">
+            <div class="envelope">
+                <div class="letter">
+                    <div class="text">
+                        <strong>Toca aquí</strong>
+                        <br>
+                        🖤
+                    </div>
+                </div>
+            </div>
+            <div class="heart"></div>
+        </div>
+    </div>
+
+    <div class="card-container" id="card-container">
+        <div class="card-content">
+            <div class="photos">
+                <img src="foto1.jpg" alt="Foto 1" class="photo">
+                <video src="video1.mp4" class="photo" autoplay loop muted playsinline></video>
+                <img src="foto2.jpg" alt="Foto 2" class="photo">
+                <video src="video2.mp4" class="photo" autoplay loop muted playsinline></video>
+                <img src="foto3.jpg" alt="Foto 3" class="photo">
+                </div>
+            <div id="text-message"></div>
+        </div>
+    </div>
+
+    <div class="final-screen" id="final-screen">
+        <p>Eres el amor de mi vida</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const envelope = document.getElementById('envelope');
+            const cardContainer = document.getElementById('card-container');
+            const textMessage = document.getElementById('text-message');
+            const finalScreen = document.getElementById('final-screen');
+            const musica = document.getElementById('musicaFondo');
+            
+            const fullMessage = [
+                "Feliz cumpleaños mi Chilly, Mika, Gaby, Mi amor 🖤🥺",
+                "Quiero que te queden claras dos cosas: que te amo y que no hay nadie que pueda hacerme sentir como lo haces tu 🫠",
+                "Sé que no siempre es fácil y que hemos tenido nuestros momentos. Pero quiero que sepas que elijo esto, elijo nuestros desacuerdos y nuestras risas, porque elijo *todo* lo que somos juntos. *Te amo* con una tranquilidad que no necesita de palabras perfectas, solo de hechos y de paciencia.",
+                "Confío en que vas a seguir superándote cada día como siempre lo haces y que vas a ser la mejor abogado, magistrado, juez de todo el país 🖤, que vas a lograr todas y cada una de tus metas en su debido momento, que serás aún más envidiable de lo que actualmente lo eres para todos los que tienen el placer de conocerte. 😍",
+                "Confío en nosotros, confío en ti, confío en la vida. Con el tiempo encontraremos nuestra manera perfecta de encajar, sin forzar nada ni darnos momento de incomodidad, eres la mujer que en todo momento me ha hecho sentir que no necesito a nadie más, que me tengo a mi, te tengo a ti y puedo proponerme a todo sin preocuparme de los resultado. 🤩",
+                "Te amo cuando estamos de acuerdo y te amo cuando no lo estamos. Eso no cambiara jamás. Valoro lo que hemos creado juntos por encima de cualquier dificultad y elijo estar a tu lado todos los días. ♾️",
+                "Sé que han habido tensiones, y es algo que no ignoro. Pero te amo demasiado para dejar que eso opaque nuestro futuro. Confío en nosotros, en que podemos superarnos con paciencia. Supongo que es parte de sentir que eres parte de mi 😅😚",
+                "Mi mayor deseo para ti es que hoy y siempre te sientas tan amada y felíz como lo mereces. Eres mi amor 🥺, te necesito solo a ti. 🖤",
+                "De tu novio: *\"Blakau\"*, *\"Mapache\"*, *\"Luis\"*, *\"Amargado\"*",
+                "*Te amo*."
+            ];
+
+            let messageIndex = 0;
+            let isEnvelopeOpen = false;
+
+            function openEnvelope() {
+                if (isEnvelopeOpen) return;
+                isEnvelopeOpen = true;
+                musica.play();
+                envelope.classList.add('open');
+                setTimeout(() => {
+                    envelope.style.display = 'none';
+                    cardContainer.style.display = 'flex';
+                    cardContainer.classList.add('visible');
+                    revealNextMessage();
+                }, 1000);
+            }
+
+            function revealNextMessage() {
+                if (messageIndex < fullMessage.length) {
+                    const p = document.createElement('p');
+                    p.innerHTML = fullMessage[messageIndex].replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    textMessage.appendChild(p);
+                    cardContainer.scrollTop = cardContainer.scrollHeight;
+                    messageIndex++;
+                } else {
+                    setTimeout(() => {
+                        cardContainer.classList.remove('visible');
+                        finalScreen.classList.add('visible');
+                    }, 2000);
+                }
+            }
+
+            envelope.addEventListener('click', openEnvelope);
+            cardContainer.addEventListener('click', revealNextMessage);
+        });
+    </script>
+
+</body>
+</html>
