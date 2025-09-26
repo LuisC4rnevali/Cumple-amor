@@ -31,7 +31,41 @@
             height: 100vh;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent; 
+            position: relative; /* Necesario para las partículas */
         }
+
+        /* --- NUEVO: Estilos para las partículas de fondo --- */
+        .background-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Para que no interfieran con los clics */
+            z-index: 0; /* Asegura que estén detrás de todo */
+            overflow: hidden; /* Oculta partículas que se salgan */
+        }
+        .particle {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.2); /* Blanco semitransparente */
+            border-radius: 50%;
+            animation: floatUp 15s infinite linear;
+        }
+
+        @keyframes floatUp {
+            from {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            25% { opacity: 0.5; }
+            75% { opacity: 0.5; }
+            to {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        /* --- FIN NUEVO: Estilos para las partículas de fondo --- */
+
 
         .container {
             display: flex;
@@ -39,6 +73,7 @@
             align-items: center;
             height: 100%;
             perspective: 1000px;
+            z-index: 1; /* Asegura que el sobre esté encima de las partículas */
         }
 
         .envelope-wrapper {
@@ -110,7 +145,6 @@
             z-index: 0;
             transform: translateY(80px);
             opacity: 0;
-            /* MODIFICACIÓN: Se añade un retraso para sincronizar con la solapa */
             transition: transform 0.5s 0.4s ease-in-out, opacity 0.5s 0.4s;
         }
 
@@ -161,6 +195,7 @@
             box-sizing: border-box;
             flex-direction: column;
             align-items: center;
+            z-index: 1; /* Asegura que la carta esté encima de las partículas */
         }
         
         .card-container.visible { opacity: 1; }
@@ -197,14 +232,14 @@
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             margin-top: 20px;
-            cursor: pointer; /* NUEVO: Indica que se puede hacer clic en el texto */
+            cursor: pointer;
         }
         
         #text-message p {
             font-size: 1.2rem;
             line-height: 1.8;
             margin: 0 0 25px 0;
-            min-height: 1.8rem; /* Evita saltos de diseño mientras se escribe el texto */
+            min-height: 1.8rem;
         }
 
         #text-message p em {
@@ -240,7 +275,6 @@
             to { opacity: 0; transform: translate(-50%, -150%) scale(0.5); }
         }
         
-        /* --- NUEVOS ESTILOS: Animación de escritura y pista para continuar --- */
         .typing-effect::after {
             content: '█';
             display: inline-block;
@@ -260,11 +294,32 @@
             font-style: italic;
             margin-top: 20px;
             animation: pulse 2s infinite ease-in-out;
+            cursor: pointer; /* PARA HACERLO MÁS OBVIO */
         }
         @keyframes pulse {
             0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
+
+        /* --- NUEVO: Mensaje final de la carta --- */
+        #final-text-cue {
+            text-align: center;
+            color: #f5b0ff; /* Un color que combine con el énfasis del texto */
+            font-family: var(--font-cursive); /* O la fuente que prefieras */
+            font-size: 1.8rem;
+            margin-top: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s 0.5s forwards; /* Aparece después de que termina el último párrafo */
+            pointer-events: none; /* No se puede hacer clic en él */
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -273,6 +328,8 @@
         <source src="musica.mp3" type="audio/mpeg">
         Tu navegador no soporta el elemento de audio.
     </audio>
+
+    <div class="background-particles" id="background-particles"></div>
 
     <div class="container">
         <div class="envelope-wrapper" id="envelope">
@@ -299,7 +356,7 @@
                 <img src="foto3.jpg" alt="Foto 3" class="photo" data-caption="Te amo mucho 🥺">
             </div>
             <div id="text-message"></div>
-        </div>
+            </div>
     </div>
 
     <div id="lightbox" class="lightbox">
@@ -315,7 +372,8 @@
             const cardContainer = document.getElementById('card-container');
             const textMessage = document.getElementById('text-message');
             const musica = document.getElementById('musicaFondo');
-            
+            const backgroundParticles = document.getElementById('background-particles'); // NUEVO
+
             const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
             const lightboxVideo = document.getElementById('lightbox-video');
@@ -338,22 +396,39 @@
 
             let messageIndex = 0;
             let isEnvelopeOpen = false;
-            let isTyping = false; // NUEVO: Variable para controlar la animación de escritura
+            let isTyping = false;
+
+            // --- NUEVO: Generación de partículas de fondo ---
+            function createParticles() {
+                const numParticles = 30; // Número de partículas
+                for (let i = 0; i < numParticles; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    const size = Math.random() * 5 + 2; // Tamaño entre 2px y 7px
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    particle.style.left = `${Math.random() * 100}vw`; // Posición horizontal aleatoria
+                    particle.style.animationDuration = `${Math.random() * 10 + 10}s`; // Duración aleatoria (10-20s)
+                    particle.style.animationDelay = `${Math.random() * -15}s`; // Retraso negativo para que aparezcan desde el inicio
+                    backgroundParticles.appendChild(particle);
+                }
+            }
+            createParticles(); // Llama a la función al cargar la página
 
             function openEnvelope() {
                 if (isEnvelopeOpen) return;
                 isEnvelopeOpen = true;
-                musica.play().catch(e => console.log("La reproducción automática fue bloqueada."));
+                musica.play().catch(e => console.log("La reproducción automática de música fue bloqueada."));
                 envelope.classList.add('open');
+                // Ajuste de tiempo para una transición más fluida del sobre a la carta
                 setTimeout(() => {
                     envelope.style.display = 'none';
                     cardContainer.style.display = 'flex';
                     cardContainer.classList.add('visible');
-                    revealNextMessage(); // Inicia el primer mensaje
-                }, 1000);
+                    revealNextMessage();
+                }, 1000); // Duración de la animación del sobre
             }
 
-            // --- NUEVO: Funciones para la pista visual ---
             function showTapCue() {
                 if (document.getElementById('tap-cue')) return;
                 const cue = document.createElement('div');
@@ -365,8 +440,18 @@
                 const cue = document.getElementById('tap-cue');
                 if (cue) cue.remove();
             }
+            // --- NUEVO: Función para el mensaje final ---
+            function showFinalTextCue() {
+                if (document.getElementById('final-text-cue')) return;
+                const finalCue = document.createElement('div');
+                finalCue.id = 'final-text-cue';
+                finalCue.innerHTML = 'Vuelve arriba y ve las fotos 👀☝🏻';
+                cardContainer.querySelector('.card-content').appendChild(finalCue); // Añadir al contenido de la tarjeta
+                // Para asegurar que el scroll pueda llegar a verlo
+                cardContainer.scrollTop = cardContainer.scrollHeight;
+            }
 
-            // --- NUEVO: Función para la animación de escritura ---
+
             function typeMessage(element, text, speed = 40) {
                 return new Promise(resolve => {
                     let i = 0;
@@ -375,6 +460,7 @@
                     const intervalId = setInterval(() => {
                         if (i < text.length) {
                             let char = text[i];
+                            // Manejo básico de etiquetas <em> para la cursiva
                             if (char === '*') {
                                 element.innerHTML += inTag ? '</em>' : '<em>';
                                 inTag = !inTag;
@@ -384,7 +470,7 @@
                             cardContainer.scrollTop = cardContainer.scrollHeight;
                             i++;
                         } else {
-                            if (inTag) element.innerHTML += '</em>'; // Cierra la etiqueta si quedó abierta
+                            if (inTag) element.innerHTML += '</em>';
                             clearInterval(intervalId);
                             resolve();
                         }
@@ -392,9 +478,13 @@
                 });
             }
 
-            // --- MODIFICADO: Función para revelar el mensaje ---
             async function revealNextMessage() {
-                if (isTyping || messageIndex >= fullMessage.length) return;
+                if (isTyping) return; // Evitar clics múltiples mientras se escribe
+
+                if (messageIndex >= fullMessage.length) {
+                    showFinalTextCue(); // Muestra el mensaje final si ya no hay más párrafos
+                    return; // No hay más mensajes para escribir
+                }
 
                 isTyping = true;
                 removeTapCue();
@@ -411,6 +501,8 @@
                 
                 if (messageIndex < fullMessage.length) {
                     showTapCue();
+                } else {
+                    showFinalTextCue(); // Muestra el mensaje final después del último párrafo
                 }
             }
 
@@ -425,13 +517,17 @@
                 setTimeout(() => { heart.remove(); }, 800);
             }
             
-            cardContainer.addEventListener('pointerdown', () => { isDragging = true; });
+            cardContainer.addEventListener('pointerdown', (e) => {
+                // Solo inicia el arrastre si no es sobre un elemento .photo o el lightbox
+                if (!e.target.closest('.photo') && !e.target.closest('#lightbox')) {
+                    isDragging = true;
+                }
+            });
             window.addEventListener('pointermove', (e) => { if (isDragging && isEnvelopeOpen) { createHeart(e.clientX, e.clientY); } });
             window.addEventListener('pointerup', () => { isDragging = false; });
             
             envelope.addEventListener('click', openEnvelope);
             
-            // MODIFICADO: El evento ahora es solo en el área de texto
             textMessage.addEventListener('click', revealNextMessage);
 
             mediaItems.forEach(item => {
@@ -445,6 +541,8 @@
                         lightboxImg.src = item.src;
                         lightboxImg.style.display = 'block';
                         lightboxVideo.style.display = 'none';
+                        lightboxVideo.pause();
+                        lightboxVideo.currentTime = 0;
                     } else if (item.tagName === 'VIDEO') {
                         lightboxVideo.src = item.src;
                         lightboxVideo.style.display = 'block';
@@ -460,8 +558,6 @@
                 lightboxVideo.pause();
                 lightboxVideo.currentTime = 0;
             }
-
-
 
             closeLightboxBtn.addEventListener('click', closeMedia);
             lightbox.addEventListener('click', (e) => {
